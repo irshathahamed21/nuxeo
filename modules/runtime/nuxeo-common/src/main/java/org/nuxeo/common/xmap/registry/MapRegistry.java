@@ -150,6 +150,11 @@ public class MapRegistry extends AbstractRegistry implements Registry {
         return 0;
     }
 
+    protected Object newInstance(Context ctx, XAnnotatedObject xObject, Element element, String extensionId,
+            Object existing) {
+        return xObject.newInstance(ctx, element, existing);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     protected <T> T doRegister(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
@@ -163,9 +168,9 @@ public class MapRegistry extends AbstractRegistry implements Registry {
         Object contrib;
         Object existing = contributions.get(id);
         if (shouldMerge(ctx, xObject, element, extensionId, id, existing)) {
-            contrib = xObject.newInstance(ctx, element, existing);
+            contrib = newInstance(ctx, xObject, element, extensionId, existing);
         } else {
-            contrib = xObject.newInstance(ctx, element);
+            contrib = newInstance(ctx, xObject, element, extensionId, null);
         }
         contributions.put(id, contrib);
 

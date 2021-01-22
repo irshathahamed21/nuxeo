@@ -114,6 +114,11 @@ public class SingleRegistry extends AbstractRegistry implements Registry {
         return 0;
     }
 
+    protected Object newInstance(Context ctx, XAnnotatedObject xObject, Element element, String extensionId,
+            Object existing) {
+        return xObject.newInstance(ctx, element, existing);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <T> T doRegister(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
@@ -124,9 +129,9 @@ public class SingleRegistry extends AbstractRegistry implements Registry {
 
         Object contrib;
         if (shouldMerge(ctx, xObject, element, extensionId)) {
-            contrib = xObject.newInstance(ctx, element, contribution);
+            contrib = newInstance(ctx, xObject, element, extensionId, contribution);
         } else {
-            contrib = xObject.newInstance(ctx, element);
+            contrib = newInstance(ctx, xObject, element, extensionId, null);
         }
         setContribution(contrib);
 
