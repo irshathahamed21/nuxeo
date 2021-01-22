@@ -72,9 +72,10 @@ public class SingleRegistry extends AbstractRegistry implements Registry {
         if (merge != null && Boolean.TRUE.equals(merge.getValue(ctx, element))) {
             if (contribution != null && xObject.getCompatWarnOnMerge() && !merge.hasValue(ctx, element)
                     && !onlyHandlesEnablement(ctx, xObject, element)) {
-                log.warn("A contribution on extension '{}' has been implicitly merged: the compatibility "
-                        + "mechanism on its descriptor class '{}' detected it, and the attribute merge=\"true\" "
-                        + "should be added to this definition.", extensionId, contribution.getClass().getName());
+                logWarn(String.format("A contribution on extension '%s' has been implicitly merged: the compatibility "
+                        + "mechanism on its descriptor class '%s' detected it, and the attribute merge=\"true\" "
+                        + "should be added to this definition.", extensionId, contribution.getClass().getName()),
+                        extensionId);
             }
             return true;
         }
@@ -135,6 +136,14 @@ public class SingleRegistry extends AbstractRegistry implements Registry {
         }
 
         return (T) contrib;
+    }
+
+    protected void logError(String message, Throwable t, String extensionId) {
+        log.error(message, t);
+    }
+
+    protected void logWarn(String message, String extensionId) {
+        log.warn(message);
     }
 
 }
