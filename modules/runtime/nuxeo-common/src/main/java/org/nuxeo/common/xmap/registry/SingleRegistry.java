@@ -148,7 +148,7 @@ public class SingleRegistry extends AbstractRegistry implements Registry {
     }
 
     protected void logWarn(String message, String extensionId) {
-        log.warn(message);
+        log.error(message);
     }
 
 }

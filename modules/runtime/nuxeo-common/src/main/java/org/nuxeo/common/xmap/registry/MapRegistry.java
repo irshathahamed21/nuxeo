@@ -189,7 +189,7 @@ public class MapRegistry extends AbstractRegistry implements Registry {
     }
 
     protected void logWarn(String message, String extensionId, String id) {
-        log.warn(message);
+        log.error(message);
     }
 
 }
