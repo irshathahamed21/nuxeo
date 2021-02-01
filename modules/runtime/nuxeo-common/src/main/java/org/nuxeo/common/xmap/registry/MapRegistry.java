@@ -92,40 +92,89 @@ public class MapRegistry extends AbstractRegistry implements Registry {
         return id;
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    protected <T> T doRegister(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
-        String id = computeId(ctx, xObject, element);
+    protected boolean shouldRemove(Context ctx, XAnnotatedObject xObject, Element element, String extensionId,
+            String id) {
         XAnnotatedMember remove = xObject.getRemove();
         if (remove != null && Boolean.TRUE.equals(remove.getValue(ctx, element))) {
-            contributions.remove(id);
-            return null;
+            return true;
         }
-        Object contrib;
+        return false;
+    }
+
+    protected boolean shouldMerge(Context ctx, XAnnotatedObject xObject, Element element, String extensionId, String id,
+            Object existing) {
         XAnnotatedMember merge = xObject.getMerge();
         if (merge != null && Boolean.TRUE.equals(merge.getValue(ctx, element))) {
-            Object contribution = contributions.get(id);
-            if (contribution != null && xObject.getCompatWarnOnMerge() && !merge.hasValue(ctx, element)) {
+            if (existing != null && xObject.getCompatWarnOnMerge() && !merge.hasValue(ctx, element)) {
                 log.warn(
                         "The contribution with id '{}' on extension '{}' has been implicitly merged: "
                                 + "the compatibility mechanism on its descriptor class '{}' detected it, "
                                 + "and the attribute merge=\"true\" should be added to this definition.",
-                        id, extensionId, contribution.getClass().getName());
+                        id, extensionId, existing.getClass().getName());
             }
-            contrib = xObject.newInstance(ctx, element, contribution);
-        } else {
-            contrib = xObject.newInstance(ctx, element);
+            return true;
         }
-        contributions.put(id, contrib);
+        return false;
+    }
+
+    protected boolean onlyHandlesEnablement(Context ctx, XAnnotatedObject xObject, Element element) {
+        // checks no children
+        if (element.getChildNodes().getLength() > 0) {
+            return false;
+        }
+        // checks no attribute other than id and enablement
+        int nbAttr = element.getAttributes().getLength();
+        if (nbAttr > 2) {
+            return false;
+        }
+        XAnnotatedMember enable = xObject.getEnable();
+        return (enable != null && enable.hasValue(ctx, element));
+    }
+
+    /**
+     * Returns a positive integer if contribution should be enabled, and a negative one if it should be disabled.
+     * <p>
+     * Returns 0 if the enablement status should not change.
+     */
+    protected int shouldEnable(Context ctx, XAnnotatedObject xObject, Element element, String extensionId, String id,
+            Object contribution) {
         XAnnotatedMember enable = xObject.getEnable();
         if (enable != null && enable.hasValue(ctx, element)) {
             Object enabled = enable.getValue(ctx, element);
             if (enabled != null && Boolean.FALSE.equals(enabled)) {
-                disabled.add(id);
-            } else {
-                disabled.remove(id);
+                return -1;
             }
+            return 1;
         }
+        return 0;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <T> T doRegister(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
+        String id = computeId(ctx, xObject, element);
+
+        if (shouldRemove(ctx, xObject, element, extensionId, id)) {
+            contributions.remove(id);
+            return null;
+        }
+
+        Object contrib;
+        Object existing = contributions.get(id);
+        if (shouldMerge(ctx, xObject, element, extensionId, id, existing)) {
+            contrib = xObject.newInstance(ctx, element, existing);
+        } else {
+            contrib = xObject.newInstance(ctx, element);
+        }
+        contributions.put(id, contrib);
+
+        int enable = shouldEnable(ctx, xObject, element, extensionId, id, contrib);
+        if (enable > 0) {
+            disabled.remove(id);
+        } else if (enable < 0) {
+            disabled.add(id);
+        }
+
         return (T) contrib;
     }
 

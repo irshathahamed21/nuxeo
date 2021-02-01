@@ -19,7 +19,6 @@
 package org.nuxeo.runtime.services.config;
 
 import org.nuxeo.common.xmap.Context;
-import org.nuxeo.common.xmap.XAnnotatedMember;
 import org.nuxeo.common.xmap.XAnnotatedObject;
 import org.nuxeo.common.xmap.registry.MapRegistry;
 import org.nuxeo.runtime.api.Framework;
@@ -37,8 +36,7 @@ public class ConfigurationServiceRegistry extends MapRegistry {
     @SuppressWarnings("unchecked")
     protected <T> T doRegister(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
         String id = computeId(ctx, xObject, element);
-        XAnnotatedMember remove = xObject.getRemove();
-        if (remove != null && Boolean.TRUE.equals(remove.getValue(ctx, element))) {
+        if (shouldRemove(ctx, xObject, element, extensionId, id)) {
             contributions.remove(id);
             return null;
         }

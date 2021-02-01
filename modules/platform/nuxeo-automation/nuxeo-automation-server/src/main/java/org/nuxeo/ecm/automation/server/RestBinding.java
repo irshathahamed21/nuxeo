@@ -23,6 +23,7 @@ import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.common.xmap.registry.XEnable;
 import org.nuxeo.common.xmap.registry.XRegistry;
+import org.nuxeo.common.xmap.registry.XRegistryId;
 import org.nuxeo.ecm.automation.core.Constants;
 
 /**
@@ -33,6 +34,7 @@ import org.nuxeo.ecm.automation.core.Constants;
 public class RestBinding {
 
     @XNode("@name")
+    // registry id computed by custom registry
     public String name;
 
     @XNode("@chain")
@@ -41,7 +43,7 @@ public class RestBinding {
     /**
      * @deprecated since 11.5: should use {@link XEnable#ENABLE} instead
      */
-    @Deprecated
+    @Deprecated(since = "11.5")
     @XNode("@disabled")
     public boolean isDisabled;
 

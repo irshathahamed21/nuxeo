@@ -59,15 +59,15 @@ public class SingleRegistry extends AbstractRegistry implements Registry {
         this.contribution = contribution;
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> T doRegister(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
+    protected boolean shouldRemove(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
         XAnnotatedMember remove = xObject.getRemove();
         if (remove != null && Boolean.TRUE.equals(remove.getValue(ctx, element))) {
-            setContribution(null);
-            return null;
+            return true;
         }
-        Object contrib;
+        return false;
+    }
+
+    protected boolean shouldMerge(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
         XAnnotatedMember merge = xObject.getMerge();
         if (merge != null && Boolean.TRUE.equals(merge.getValue(ctx, element))) {
             if (contribution != null && xObject.getCompatWarnOnMerge() && !merge.hasValue(ctx, element)) {
@@ -75,18 +75,64 @@ public class SingleRegistry extends AbstractRegistry implements Registry {
                         + "mechanism on its descriptor class '{}' detected it, and the attribute merge=\"true\" "
                         + "should be added to this definition.", extensionId, contribution.getClass().getName());
             }
+            return true;
+        }
+        return false;
+
+    }
+
+    protected boolean onlyHandlesEnablement(Context ctx, XAnnotatedObject xObject, Element element) {
+        // checks no children
+        if (element.getChildNodes().getLength() > 0) {
+            return false;
+        }
+        // checks no attribute other than id and enablement
+        int nbAttr = element.getAttributes().getLength();
+        if (nbAttr > 2) {
+            return false;
+        }
+        XAnnotatedMember enable = xObject.getEnable();
+        return (enable != null && enable.hasValue(ctx, element));
+    }
+
+    /**
+     * Returns a positive integer if contribution should be enabled, and a negative one if it should be disabled.
+     * <p>
+     * Returns 0 if the enablement status should not change.
+     */
+    protected int shouldEnable(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
+        XAnnotatedMember enable = xObject.getEnable();
+        if (enable != null && enable.hasValue(ctx, element)) {
+            Object enabled = enable.getValue(ctx, element);
+            if (enabled != null && Boolean.FALSE.equals(enabled)) {
+                return -1;
+            }
+            return 1;
+        }
+        return 0;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T doRegister(Context ctx, XAnnotatedObject xObject, Element element, String extensionId) {
+        if (shouldRemove(ctx, xObject, element, extensionId)) {
+            setContribution(null);
+            return null;
+        }
+
+        Object contrib;
+        if (shouldMerge(ctx, xObject, element, extensionId)) {
             contrib = xObject.newInstance(ctx, element, contribution);
         } else {
             contrib = xObject.newInstance(ctx, element);
         }
         setContribution(contrib);
-        XAnnotatedMember enable = xObject.getEnable();
-        if (enable != null) {
-            Object enabled = enable.getValue(ctx, element);
-            if (enabled != null) {
-                this.enabled = Boolean.TRUE.equals(enabled);
-            }
+
+        int enable = shouldEnable(ctx, xObject, element, extensionId);
+        if (enable != 0) {
+            this.enabled = enable > 0;
         }
+
         return (T) contrib;
     }
 
