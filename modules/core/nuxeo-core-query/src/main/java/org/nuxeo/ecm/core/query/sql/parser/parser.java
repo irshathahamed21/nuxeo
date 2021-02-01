@@ -8,7 +8,6 @@ package org.nuxeo.ecm.core.query.sql.parser;
 
 import java_cup.runtime.*;
 import org.nuxeo.ecm.core.query.sql.model.*;
-import org.nuxeo.ecm.core.query.sql.*;
 import org.nuxeo.ecm.core.query.*;
 
 /** CUP v0.10k TUM Edition 20050516 generated parser.
