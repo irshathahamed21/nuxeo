@@ -43,7 +43,6 @@ import org.nuxeo.ecm.platform.commandline.executor.service.executors.ShellExecut
 import org.nuxeo.runtime.RuntimeMessage.Level;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
-import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
@@ -67,24 +66,26 @@ public class CommandLineExecutorComponent extends DefaultComponent implements Co
 
     protected static final Executor DEFAULT_EXECUTOR_INSTANCE = new ShellExecutor();
 
-    protected EnvironmentDescriptor env = new EnvironmentDescriptor();
-
-    protected Map<String, EnvironmentDescriptor> envDescriptors = new HashMap<>();
-
     protected Map<String, CommandAvailability> unavailableCommands;
 
     @Override
-    public void activate(ComponentContext context) {
-        env = new EnvironmentDescriptor();
-    }
-
-    @Override
-    public void deactivate(ComponentContext context) {
-        env = null;
-    }
-
-    @Override
     public void start(ComponentContext context) {
+        // compatibility check after behavior change: descriptor used to accept multiple names separated by a comma
+        this.<MapRegistry> getExtensionPointRegistry(EP_ENV)
+            .getContributions()
+            .keySet()
+            .stream()
+            .filter(name -> name.contains(","))
+            .forEach(name -> {
+                String msg = String.format(
+                        "Since version 11.5, contributions to extension point '%s--%s' do not accept comma-separated names "
+                                + "to match multiple commands or command lines anymore: contribution with name '%s' should be duplicated",
+                        "org.nuxeo.ecm.platform.commandline.executor.service.CommandLineExecutorComponent", EP_ENV,
+                        name);
+                addRuntimeMessage(Level.ERROR, msg);
+                log.error(msg);
+            });
+
         // compute testers before handling command registrations
         Map<String, CommandTester> testers = new HashMap<>();
         this.<CommandTesterDescriptor> getRegistryContributions(EP_CMDTESTER).forEach(desc -> {
@@ -137,23 +138,8 @@ public class CommandLineExecutorComponent extends DefaultComponent implements Co
         unavailableCommands = null;
     }
 
-    @Override
-    public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
-        if (EP_ENV.equals(extensionPoint)) {
-            EnvironmentDescriptor desc = (EnvironmentDescriptor) contribution;
-            String name = desc.getName();
-            if (name == null) {
-                env.merge(desc);
-            } else {
-                for (String envName : name.split(",")) {
-                    if (envDescriptors.containsKey(envName)) {
-                        envDescriptors.get(envName).merge(desc);
-                    } else {
-                        envDescriptors.put(envName, desc);
-                    }
-                }
-            }
-        }
+    protected EnvironmentDescriptor getEnvironmentDescriptor(String name) {
+        return this.<EnvironmentDescriptor> getRegistryContribution(EP_ENV, name).orElse(null);
     }
 
     /*
@@ -169,9 +155,13 @@ public class CommandLineExecutorComponent extends DefaultComponent implements Co
                                             // should not happen
                                             .orElseThrow(() -> new RuntimeException(
                                                     "Command " + commandName + " is not be available"));
-        EnvironmentDescriptor environment = new EnvironmentDescriptor().merge(
-                env).merge(envDescriptors.getOrDefault(commandName, envDescriptors.get(cmdDesc.getCommand())));
-        return DEFAULT_EXECUTOR_INSTANCE.exec(cmdDesc, params, environment);
+        EnvironmentDescriptor globalEnv = getEnvironmentDescriptor("");
+        EnvironmentDescriptor commandEnv = getEnvironmentDescriptor(commandName);
+        if (commandEnv == null) {
+            commandEnv = getEnvironmentDescriptor(cmdDesc.getCommand());
+        }
+        return DEFAULT_EXECUTOR_INSTANCE.exec(cmdDesc, params,
+                EnvironmentDescriptor.newInstance(globalEnv, commandEnv));
     }
 
     @Override

@@ -27,17 +27,21 @@ import org.nuxeo.common.Environment;
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeMap;
 import org.nuxeo.common.xmap.annotation.XObject;
+import org.nuxeo.common.xmap.registry.XRegistry;
+import org.nuxeo.common.xmap.registry.XRegistryId;
 
 @XObject(value = "environment")
+@XRegistry
 public class EnvironmentDescriptor {
 
     /**
-     * If {@code name} is null, then the environment is global.<br>
+     * If {@code name} is null or empty, then the environment is global.<br>
      * Else the environment can be associated with a command ("command name") or with a tool ("command line").
      *
      * @since 7.4
      */
-    @XNode("@name")
+    @XNode(value = "@name", defaultAssignment = "")
+    @XRegistryId
     protected String name;
 
     @XNode("workingDirectory")
@@ -56,16 +60,6 @@ public class EnvironmentDescriptor {
         return workingDirectory;
     }
 
-    public EnvironmentDescriptor merge(EnvironmentDescriptor other) {
-        if (other != null) {
-            if (other.workingDirectory != null) {
-                workingDirectory = other.workingDirectory;
-            }
-            getParameters().putAll(other.getParameters());
-        }
-        return this;
-    }
-
     /**
      * @since 7.4
      */
@@ -78,6 +72,29 @@ public class EnvironmentDescriptor {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Returns a new descriptor, merging a global environment with another one.
+     *
+     * @since 11.5
+     */
+    public static EnvironmentDescriptor newInstance(EnvironmentDescriptor global, EnvironmentDescriptor other) {
+        EnvironmentDescriptor res = new EnvironmentDescriptor();
+        if (global != null) {
+            if (global.workingDirectory != null) {
+                res.workingDirectory = global.workingDirectory;
+            }
+            res.parameters.putAll(global.getParameters());
+        }
+        if (other != null) {
+            res.name = other.name;
+            if (other.workingDirectory != null) {
+                res.workingDirectory = other.workingDirectory;
+            }
+            res.parameters.putAll(other.getParameters());
+        }
+        return res;
     }
 
 }
