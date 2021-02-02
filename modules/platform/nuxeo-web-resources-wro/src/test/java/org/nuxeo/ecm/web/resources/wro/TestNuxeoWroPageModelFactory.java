@@ -99,6 +99,7 @@ public class TestNuxeoWroPageModelFactory {
         assertTrue(page.hasResourcesOfType(ResourceType.CSS));
         assertTrue(page.hasResourcesOfType(ResourceType.JS));
         List<Resource> allResources = page.getResources();
+        System.err.println(allResources);
         assertEquals(8, allResources.size());
         assertEquals("nuxeo:jquery.js", allResources.get(0).getUri());
         assertEquals("nuxeo:effects", allResources.get(1).getUri());
