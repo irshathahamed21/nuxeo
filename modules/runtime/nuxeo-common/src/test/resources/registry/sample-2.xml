@@ -15,6 +15,9 @@
     <stringMapAnnotated>
       <item id="item1">sample1 - annotated item1 added</item>
     </stringMapAnnotated>
+    <aliases>
+      <alias name="sample1">item1 added</alias>
+    </aliases>
   </descriptor>
 
   <descriptor name="sample2">
@@ -24,6 +27,7 @@
     <stringListAnnotated remove="true" />
     <stringMap remove="true" />
     <stringMapAnnotated empty="true" />
+    <aliases remove="true" />
   </descriptor>
 
   <descriptor name="sample3">
@@ -42,6 +46,9 @@
       <item id="item1">sample3 - annotated item1 overridden</item>
       <item id="item3">sample3 - annotated item3 overridden</item>
     </stringMapAnnotated>
+    <aliases merge="false">
+      <alias name="sample3">item1 merged</alias>
+    </aliases>
   </descriptor>
 
   <descriptor name="sample4">
@@ -60,6 +67,9 @@
       <item id="item1">sample4 - annotated item1 merged</item>
       <item id="item3">sample4 - annotated item3 merged</item>
     </stringMapAnnotated>
+    <aliases>
+      <alias name="sample4">item1 merged</alias>
+    </aliases>
   </descriptor>
 
   <descriptor name="sample5">

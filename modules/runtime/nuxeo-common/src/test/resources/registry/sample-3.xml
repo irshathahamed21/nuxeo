@@ -19,6 +19,9 @@
     <stringMapAnnotated>
       <item id="item1">sample3 - annotated item1 overridden explicitly</item>
     </stringMapAnnotated>
+    <aliases>
+      <alias name="sample3">item1 overridden explicitly</alias>
+    </aliases>
   </descriptor>
 
 </document>

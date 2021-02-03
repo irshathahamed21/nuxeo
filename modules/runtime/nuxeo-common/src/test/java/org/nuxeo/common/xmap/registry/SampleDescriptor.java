@@ -50,6 +50,9 @@ public class SampleDescriptor {
     @XNodeList(value = "stringList/item", type = ArrayList.class, componentType = String.class)
     public List<String> stringList;
 
+    @XNodeList(value = "aliases/alias", type = ArrayList.class, componentType = SampleDescriptorAlias.class)
+    public List<SampleDescriptorAlias> aliases;
+
     @XNodeList(value = "stringListAnnotated/item", type = ArrayList.class, componentType = String.class, nullByDefault = true)
     @XMerge(value = "stringListAnnotated@append", fallback = "stringListAnnotated"
             + XMerge.MERGE, defaultAssignment = true)
