@@ -179,6 +179,8 @@ public class NXAuditEventsService extends DefaultComponent implements ComponentM
                 return adapter.cast(backend);
             } else {
                 log.error("Can not provide service {} since backend is undefined", adapter::getCanonicalName);
+                Throwable t = new Throwable();
+                log.error("NXP-30137: log stack trace for debug", t);
                 return null;
             }
         }
